@@ -5,17 +5,19 @@ class Parser
 	private:
 		Scanner* scanner;
 		Token* lToken;
+        SymbolTable* globalST;  // Tabela de símbolos global
+    	SymbolTable* currentST; // Tabela de símbolos do escopo atual
 
 		void advance();
 		void match(int);
-		
-	public:
-		Parser(string);
-		void run();
-        void program();
-        void classList();
-        void classDecl();
-        void classBody();
+		void error(string);
+		void initSimbolTable(); // Novo método para carregar palavras reservadas
+
+        // Métodos do parser da Etapa 2
+		void program();
+		void classList();
+		void classDecl();
+		void classBody();
         void varDeclListOpt();
         void varDeclList();
         void varDecl();
@@ -53,5 +55,8 @@ class Parser
         void factor();
         void argListOpt();
         void argList();
-        void error(string);
+
+	public:
+		Parser(string);
+		void run();
 };
