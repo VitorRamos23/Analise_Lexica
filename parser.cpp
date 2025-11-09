@@ -4,7 +4,34 @@
 
 Parser::Parser(string input)
 {
-	scanner = new Scanner(input);
+    // Cria a tabela de símbolos e a inicializa
+	currentST = globalST = new SymbolTable();
+	initSimbolTable();
+
+    // Passa a tabela de símbolos global para o Scanner
+	scanner = new Scanner(input, globalST);
+}
+
+void
+Parser::initSimbolTable()
+{
+    Token* t;
+        
+    // Adiciona todas as palavras reservadas ao globalST
+    t = new Token(CLASS, "class"); globalST->add(new STEntry(t, true));
+    t = new Token(EXTENDS, "extends"); globalST->add(new STEntry(t, true));
+    t = new Token(INT, "int"); globalST->add(new STEntry(t, true));
+    t = new Token(STRING, "string"); globalST->add(new STEntry(t, true));
+    t = new Token(BREAK, "break"); globalST->add(new STEntry(t, true));
+    t = new Token(PRINT, "print"); globalST->add(new STEntry(t, true));
+    t = new Token(READ, "read"); globalST->add(new STEntry(t, true));
+    t = new Token(RETURN, "return"); globalST->add(new STEntry(t, true));
+    t = new Token(SUPER, "super"); globalST->add(new STEntry(t, true));
+    t = new Token(IF, "if"); globalST->add(new STEntry(t, true));
+    t = new Token(ELSE, "else"); globalST->add(new STEntry(t, true));
+    t = new Token(FOR, "for"); globalST->add(new STEntry(t, true));
+    t = new Token(NEW, "new"); globalST->add(new STEntry(t, true));
+    t = new Token(CONSTRUCTOR, "constructor"); globalST->add(new STEntry(t, true));
 }
 
 void
@@ -28,9 +55,25 @@ Parser::run()
 	advance();	
 
 	program();
+
+    // O código de teste do esqueleto foi removido.
 	
 	cout << "Compilação encerrada com sucesso!\n";
 }
+
+void
+Parser::error(string str)
+{
+	cout << "Linha " << scanner->getLine() << ": " << str << endl;
+
+	exit(EXIT_FAILURE);
+}
+
+// 
+// -------------------------------------------------------------------
+// A PARTIR DAQUI, OS MÉTODOS DO PARSER SÃO OS MESMOS DA ETAPA 2
+// -------------------------------------------------------------------
+//
 
 void
 Parser::program()
@@ -80,6 +123,8 @@ Parser::classBody()
 void
 Parser::varDeclListOpt()
 {
+    // A lógica de lookahead aqui pode ser simplificada,
+    // mas manteremos a da Etapa 2 por consistência.
     if (lToken->name == INT || lToken->name == STRING || lToken->name == ID)
     {
         varDeclList();
@@ -280,17 +325,13 @@ Parser::statement()
         Token* next = scanner->peekToken(1); // Lookahead 1
         Token* next2 = scanner->peekToken(2); // Lookahead 2
 
-        if (lToken->name == ID) { // Se o token atual é um ID
-            if (next->name == ID) { // ID ID -> VarDecl
-                varDecl();
-            } else if (next->name == SEP_LBRACKET && next2->name == SEP_RBRACKET) { // ID [ ] -> VarDecl (ex: int[] arr;)
-                varDecl();
-            } else { // ID = ou ID ( ou ID [ Expression ] = -> AtribStat
-                atribOrCallStat();
-                match(SEP_SEMICOLON);
-            }
-        } else { // Se o token atual não é ID, mas é um Type (int, string, etc.)
+        if (next->name == ID) { // ID ID -> VarDecl
             varDecl();
+        } else if (next->name == SEP_LBRACKET && next2->name == SEP_RBRACKET) { // ID [ ] -> VarDecl (ex: int[] arr;)
+            varDecl();
+        } else { // ID = ou ID ( ou ID [ Expression ] = -> AtribStat
+            atribOrCallStat();
+            match(SEP_SEMICOLON);
         }
         delete next;
         delete next2;
@@ -359,6 +400,15 @@ void Parser::atribOrCallStat()
     }
     else
     {
+        // Esta verificação pode ser removida se lValue()
+        // por si só (como uma chamada de método) for um comando válido.
+        // No esqueleto da Etapa 2, parece que não era.
+        // Re-avaliando o esqueleto da Etapa 2, `atribOrCallStat`
+        // não existe, ele estava embutido em `statement`.
+        // A gramática suporta `lValue();` como um comando?
+        // A `gramatica_x++.pdf` não tem `atribOrCallStat`.
+        // Mas a `etapa2_sintatica_2025_2.pdf` tem...
+        // Vou manter a lógica da Etapa 2.
         error("Esperado '=' ou '(' após LValue em um comando.");
     }
 }
@@ -374,6 +424,10 @@ void
 Parser::readStat()
 {
     match(READ);
+    [cite_start]// A gramática original `gramatica_x++.pdf` [cite: 63] diz `read LValue`
+    [cite_start]// A gramática `etapa2_sintatica_2025_2.pdf` [cite: 201] também.
+    // O parser da Etapa 2 implementava `read(lValue)`.
+    // Vou manter `read(lValue)` como na Etapa 2.
     match(SEP_LPAREN);
     lValue();
     match(SEP_RPAREN);
@@ -447,7 +501,8 @@ Parser::expressionOpt()
 {
     if (lToken->name == INTEGER_LITERAL || lToken->name == STRING_LITERAL ||
         lToken->name == ID || lToken->name == SEP_LPAREN ||
-        lToken->name == OP_PLUS || lToken->name == OP_MINUS)
+        lToken->name == OP_PLUS || lToken->name == OP_MINUS ||
+        lToken->name == NEW)
     {
         expression();
     }
@@ -488,7 +543,6 @@ Parser::lValueComp()
         match(SEP_RBRACKET);
         lValueComp();
     }
-    // Se não houver mais . ou [], a recursão para aqui.
 }
 
 void
@@ -515,7 +569,7 @@ Parser::allocExpression()
         argListOpt();
         match(SEP_RPAREN);
     }
-    else if (lToken->name == INT || lToken->name == STRING || lToken->name == ID)
+    else if (lToken->name == INT || lToken->name == STRING)
     {
         type();
         match(SEP_LBRACKET);
@@ -524,7 +578,7 @@ Parser::allocExpression()
     }
     else
     {
-        error("Esperado ID ou tipo após NEW.");
+        error("Esperado ID ou tipo (int, string) após NEW.");
     }
 }
 
@@ -596,7 +650,8 @@ Parser::argListOpt()
 {
     if (lToken->name == INTEGER_LITERAL || lToken->name == STRING_LITERAL ||
         lToken->name == ID || lToken->name == SEP_LPAREN ||
-        lToken->name == OP_PLUS || lToken->name == OP_MINUS)
+        lToken->name == OP_PLUS || lToken->name == OP_MINUS ||
+        lToken->name == NEW)
     {
         argList();
     }
@@ -611,12 +666,4 @@ Parser::argList()
         match(SEP_COMMA);
         argList();
     }
-}
-
-void
-Parser::error(string str)
-{
-	cout << "Linha " << scanner->getLine() << ": " << str << endl;
-
-	exit(EXIT_FAILURE);
 }
