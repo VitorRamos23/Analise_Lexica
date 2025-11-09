@@ -1,12 +1,12 @@
 #include "scanner.h"    
 
-//Construtor que recebe uma string com o nome do arquivo 
-//de entrada e preenche input com seu conteúdo.
-Scanner::Scanner(string input)
+//Construtor
+Scanner::Scanner(string input, SymbolTable* table)
 {
     pos = 0;
     line = 1;
-    initReservedWords();
+
+    st = table; // Armazena a tabela de símbolos recebida
 
     ifstream inputFile(input, ios::in);
     string fileLine;
@@ -23,24 +23,6 @@ Scanner::Scanner(string input)
         lexicalError("Unable to open file");
 }
 
-void Scanner::initReservedWords()
-{
-    reservedWords["class"] = CLASS;
-    reservedWords["extends"] = EXTENDS;
-    reservedWords["int"] = INT;
-    reservedWords["string"] = STRING;
-    reservedWords["break"] = BREAK;
-    reservedWords["print"] = PRINT;
-    reservedWords["read"] = READ;
-    reservedWords["return"] = RETURN;
-    reservedWords["super"] = SUPER;
-    reservedWords["if"] = IF;
-    reservedWords["else"] = ELSE;
-    reservedWords["for"] = FOR;
-    reservedWords["new"] = NEW;
-    reservedWords["constructor"] = CONSTRUCTOR;
-}
-
 int
 Scanner::getLine()
 {
@@ -51,7 +33,7 @@ Scanner::getLine()
 Token* Scanner::nextToken()
 {
     string lexeme;
-
+    
     while (pos < input.length())
     {
         char currentChar = input[pos];
@@ -107,11 +89,22 @@ Token* Scanner::nextToken()
                 lexeme += input[pos];
                 pos++;
             }
-            if (reservedWords.count(lexeme))
+
+            // *** LÓGICA DA ETAPA 3 ***
+            // Pesquisa na tabela de símbolos (que contém as palavras reservadas)
+            STEntry* obj = st->get(lexeme);
+            
+            if (!obj)
             {
-                return new Token(reservedWords[lexeme], lexeme);
+                // Não encontrou, é um ID comum
+                return new Token(ID, lexeme);
             }
-            return new Token(ID, lexeme);
+            else 
+            {
+                // Encontrou, é uma palavra reservada.
+                // Retorna um token com o nome correto (ex: CLASS, IF, FOR)
+                return new Token(obj->token->name, lexeme);
+            }
         }
 
         // Números inteiros
@@ -133,6 +126,9 @@ Token* Scanner::nextToken()
             pos++; // Consome '"'
             while (pos < input.length() && input[pos] != '"')
             {
+                if (input[pos] == '\n') // Strings não podem pular linha
+                    lexicalError("String literal com quebra de linha.");
+                
                 lexeme += input[pos];
                 pos++;
             }
@@ -203,19 +199,6 @@ Token* Scanner::nextToken()
     }
 
     return new Token(END_OF_FILE, "");
- 
-}
-
-
-Token* Scanner::peekToken(int k)
-{
-    // Cria uma cópia temporária do scanner para realizar o lookahead
-    Scanner tempScanner = *this;
-    Token* token = nullptr;
-    for (int i = 0; i < k; ++i) {
-        token = tempScanner.nextToken();
-    }
-    return token;
 }
 
 void 
