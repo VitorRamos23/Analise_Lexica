@@ -1,7 +1,6 @@
+#include "symboltable.h"
 #include <fstream>
 #include <cstdlib> // Para exit()
-#include <map>
-#include "token.h"
 
 class Scanner 
 {
@@ -9,18 +8,16 @@ class Scanner
         string input;//Armazena o texto de entrada
         std::string::size_type pos;//Posição atual
         int line;
-        map<string, int> reservedWords;
+        SymbolTable* st; // Tabela de símbolos
     
     public:
     //Construtor
-        Scanner(string);
-        void initReservedWords();
+        Scanner(string, SymbolTable*); // Recebe a TS do Parser
 
         int getLine();
     
         //Método que retorna o próximo token da entrada
-        Token* nextToken();
-        Token* peekToken(int k = 1);        
+        Token* nextToken();        
     
         //Método para manipular erros
         void lexicalError(string);
