@@ -1,61 +1,46 @@
-#ifndef TOKEN_H
-#define TOKEN_H
-
+#include <iostream>
+#include <ctype.h>//Funções de caracteres
 #include <string>
 
 using namespace std;
 
-// Enumeração de todos os nomes de tokens
-enum TokenName {
-    // Identificadores e Literais
-    ID,                 // [cite: 196]
-    INTEGER_LITERAL,    // [cite: 198]
-    STRING_LITERAL,     // [cite: 201]
-
-    // Operadores [cite: 199]
-    OP_LT,              // <
-    OP_GT,              // >
-    OP_LE,              // <=
-    OP_GE,              // >=
-    OP_PLUS,            // +
-    OP_MINUS,           // -
-    OP_STAR,            // *
-    OP_SLASH,           // /
-    OP_PERCENT,         // %
-    OP_ASSIGN,          // =
-    OP_EQ,              // ==
-    OP_NE,              // !=
-
-    // Separadores [cite: 200]
-    SEP_LPAREN,         // (
-    SEP_RPAREN,         // )
-    SEP_LBRACKET,       // [
-    SEP_RBRACKET,       // ]
-    SEP_LBRACE,         // {
-    SEP_RBRACE,         // }
-    SEP_SEMICOLON,      // ;
-    SEP_DOT,            // .
-    SEP_COMMA,          // ,
-
-    // Fim de Arquivo
+enum Names 
+{
+    UNDEF,
+    //Continuar
+    //Nomes e atributos dos tokens da linguagem
+    CLASS, EXTENDS, INT, STRING, BREAK, PRINT, READ, RETURN, SUPER, IF, ELSE, FOR, NEW, CONSTRUCTOR,
+    ID,
+    INTEGER_LITERAL,
+    OP_LT, OP_GT, OP_LE, OP_GE, OP_PLUS, OP_MINUS, OP_STAR, OP_SLASH, OP_PERCENT, OP_ASSIGN, OP_EQ, OP_NE,
+    SEP_LPAREN, SEP_RPAREN, SEP_LBRACKET, SEP_RBRACKET, SEP_LBRACE, SEP_RBRACE, SEP_SEMICOLON, SEP_DOT, SEP_COMMA,
+    STRING_LITERAL,
     END_OF_FILE
 };
 
-// Estrutura para armazenar as informações de um token
-class Token {
-public:
-    int name;
-    string lexeme;
+class Token 
+{
+    public: 
+        int name;
+        int attribute;
+        string lexeme;
+    
+        Token(int name)
+        {
+            this->name = name;
+            attribute = UNDEF;
+        }
 
-    Token(int name, string lexeme) {
-        this->name = name;
-        this->lexeme = lexeme;
-    }
-
-    Token(int name) {
-        this->name = name;
-        this->lexeme = "";
-    }
+        Token(int name, string l)
+        {
+            this->name = name;
+            attribute = UNDEF;
+            lexeme = l;
+        }
+        
+        Token(int name, int attr)
+        {
+            this->name = name;
+            attribute = attr;
+        }
 };
-
-#endif
