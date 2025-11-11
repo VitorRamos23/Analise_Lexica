@@ -1,6 +1,7 @@
 #include "symboltable.h"
 #include <fstream>
 #include <cstdlib> // Para exit()
+#include <vector> // <--- ADICIONADO (Necessário para peekToken)
 
 class Scanner 
 {
@@ -18,7 +19,8 @@ class Scanner
     
         //Método que retorna o próximo token da entrada
         Token* nextToken();        
-    
+        Token* peekToken(int n); // <--- ADICIONADO
+
         //Método para manipular erros
         void lexicalError(string);
 };
