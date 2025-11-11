@@ -619,8 +619,9 @@ Parser::factor()
     {
         match(INTEGER_LITERAL);
     }
+
     else if (lToken->name == STRING_LITERAL)
-    F    {
+    {
         match(STRING_LITERAL);
     }
     else if (lToken->name == ID)
