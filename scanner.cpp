@@ -253,4 +253,3 @@ Token* Scanner::peekToken(int n)
     // 6. Retornar a cópia do token
     return result;
 }
-// <--- FIM DA IMPLEMENTAÇÃO ADICIONADA --->
